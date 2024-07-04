@@ -95,40 +95,45 @@ function CleanUpPreviousInstallations {
 }
 
 # Main script
-Write-Host "Welcome to the WSL Fix Script" -ForegroundColor Green
-Write-Host "Please select an action:" -ForegroundColor Green
-Write-Host "  1. Remove existing WSL package"
-Write-Host "  2. Install WSL update"
-Write-Host "  3. Install Ubuntu distribution"
-Write-Host "  4. Verify WSL status"
-Write-Host "  5. Clean up previous installations"
-Write-Host "  6. Exit"
+Write-Host "Welcome to the WSL Management Script" -ForegroundColor Green
 
-$choice = Read-Host "Enter your choice (1-6): "
+$continue = $true
 
-switch ($choice) {
-    '1' {
-        Remove-ExistingWSLPackage
-    }
-    '2' {
-        Install-WSLUpdate
-    }
-    '3' {
-        Install-UbuntuDistro
-    }
-    '4' {
-        VerifyWSLStatus
-    }
-    '5' {
-        CleanUpPreviousInstallations
-    }
-    '6' {
-        Write-Host "Exiting script..." -ForegroundColor Yellow
-        exit
-    }
-    default {
-        Write-Host "Invalid choice. Exiting script..." -ForegroundColor Yellow
+while ($continue) {
+    Write-Host "Please select an action:" -ForegroundColor Green
+    Write-Host "  1. Remove existing WSL package"
+    Write-Host "  2. Install WSL update"
+    Write-Host "  3. Install Ubuntu distribution"
+    Write-Host "  4. Verify WSL status"
+    Write-Host "  5. Clean up previous installations"
+    Write-Host "  6. Exit"
+
+    $choice = Read-Host "Enter your choice (1-6): "
+
+    switch ($choice) {
+        '1' {
+            Remove-ExistingWSLPackage
+        }
+        '2' {
+            Install-WSLUpdate
+        }
+        '3' {
+            Install-UbuntuDistro
+        }
+        '4' {
+            VerifyWSLStatus
+        }
+        '5' {
+            CleanUpPreviousInstallations
+        }
+        '6' {
+            Write-Host "Exiting script..." -ForegroundColor Yellow
+            $continue = $false
+        }
+        default {
+            Write-Host "Invalid choice. Please enter a number from 1 to 6." -ForegroundColor Yellow
+        }
     }
 }
 
-Write-Host "WSL fix script completed." -ForegroundColor Green
+Write-Host "WSL Management Script completed." -ForegroundColor Green
