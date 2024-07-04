@@ -7,7 +7,12 @@ function Remove-ExistingWSLPackage {
         if ($packages) {
             $packages | ForEach-Object {
                 Write-Host "Removing package: $($_.Name)"
-                Remove-AppxPackage -Package $_.PackageFullName -AllUsers
+                $confirmation = Read-Host "Are you sure you want to remove this package? (Y/N)"
+                if ($confirmation -eq "Y" -or $confirmation -eq "y") {
+                    Remove-AppxPackage -Package $_.PackageFullName -AllUsers
+                } else {
+                    Write-Host "Skipped removal of package: $($_.Name)"
+                }
             }
         } else {
             Write-Host "No existing WSL package found."
@@ -23,9 +28,16 @@ function Install-WSLUpdate {
         $wslInstallerUrl = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
         $installerPath = "$env:TEMP\wsl_update_x64.msi"
         Invoke-WebRequest -Uri $wslInstallerUrl -OutFile $installerPath -ErrorAction Stop
-        Start-Process msiexec.exe -ArgumentList "/i", $installerPath, "/quiet", "/norestart" -NoNewWindow -Wait
-        Remove-Item -Path $installerPath -Force
-        Write-Host "WSL update package installed."
+        Write-Host "WSL update package downloaded to: $installerPath"
+        
+        $confirmation = Read-Host "Ready to install the WSL update package. Continue? (Y/N)"
+        if ($confirmation -eq "Y" -or $confirmation -eq "y") {
+            Start-Process msiexec.exe -ArgumentList "/i", $installerPath, "/quiet", "/norestart" -NoNewWindow -Wait
+            Remove-Item -Path $installerPath -Force
+            Write-Host "WSL update package installed."
+        } else {
+            Write-Host "Installation of WSL update package cancelled."
+        }
     } catch {
         Write-Error "Error installing WSL update package: $_"
     }
@@ -37,8 +49,15 @@ function Install-UbuntuDistro {
         $distroUrl = "https://github.com/microsoft/WSL/releases/download/2.2.4/Microsoft.WSL_2.2.4.0_x64_ARM64.msixbundle"
         $distroPath = "$env:TEMP\Microsoft.WSL_2.2.4.0_x64_ARM64.msixbundle"
         Invoke-WebRequest -Uri $distroUrl -OutFile $distroPath -ErrorAction Stop
-        Add-AppxPackage -Path $distroPath
-        Write-Host "Ubuntu distribution installed."
+        Write-Host "Ubuntu distribution downloaded to: $distroPath"
+        
+        $confirmation = Read-Host "Ready to install the Ubuntu distribution. Continue? (Y/N)"
+        if ($confirmation -eq "Y" -or $confirmation -eq "y") {
+            Add-AppxPackage -Path $distroPath
+            Write-Host "Ubuntu distribution installed."
+        } else {
+            Write-Host "Installation of Ubuntu distribution cancelled."
+        }
     } catch {
         Write-Error "Error installing Ubuntu distribution: $_"
     }
