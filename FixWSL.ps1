@@ -29,7 +29,7 @@ function Install-WSLUpdate {
         $installerPath = "$env:TEMP\wsl_update_x64.msi"
         Invoke-WebRequest -Uri $wslInstallerUrl -OutFile $installerPath -ErrorAction Stop
         Write-Host "WSL update package downloaded to: $installerPath"
-        
+
         $confirmation = Read-Host "Ready to install the WSL update package. Continue? (Y/N)"
         if ($confirmation -eq "Y" -or $confirmation -eq "y") {
             Start-Process msiexec.exe -ArgumentList "/i", $installerPath, "/quiet", "/norestart" -NoNewWindow -Wait
@@ -43,32 +43,32 @@ function Install-WSLUpdate {
     }
 }
 
-function Install-UbuntuDistro {
-    Write-Host "Downloading and installing Ubuntu distribution..."
+function Install-WSL {
+    Write-Host "Downloading Windows Subsystem for Linux installation..."
     try {
         $distroUrl = "https://github.com/microsoft/WSL/releases/download/2.2.4/Microsoft.WSL_2.2.4.0_x64_ARM64.msixbundle"
         $distroPath = "$env:TEMP\Microsoft.WSL_2.2.4.0_x64_ARM64.msixbundle"
         Invoke-WebRequest -Uri $distroUrl -OutFile $distroPath -ErrorAction Stop
-        Write-Host "Ubuntu distribution downloaded to: $distroPath"
-        
-        $confirmation = Read-Host "Ready to install the Ubuntu distribution. Continue? (Y/N)"
+        Write-Host "Windows Subsystem for Linux installation downloaded to: $distroPath"
+
+        $confirmation = Read-Host "Ready to install Windows Subsystem for Linux. Continue? (Y/N)"
         if ($confirmation -eq "Y" -or $confirmation -eq "y") {
             Add-AppxPackage -Path $distroPath
-            Write-Host "Ubuntu distribution installed."
+            Write-Host "Windows Subsystem for Linux installed."
         } else {
-            Write-Host "Installation of Ubuntu distribution cancelled."
+            Write-Host "Windows Subsystem for Linux installation cancelled."
         }
     } catch {
-        Write-Error "Error installing Ubuntu distribution: $_"
+        Write-Error "Error installing Windows Subsystem for Linux: $_"
     }
 }
 
 function VerifyWSLStatus {
-    Write-Host "Verifying WSL status..."
+    Write-Host "Verifying Windows Subsystem for Linux status..."
     try {
         wsl --list --all -v
     } catch {
-        Write-Error "Error verifying WSL status: $_"
+        Write-Error "Error verifying Windows Subsystem for Linux status: $_"
     }
 }
 
@@ -94,8 +94,45 @@ function CleanUpPreviousInstallations {
     Write-Host "Clean-up complete. Please restart your computer."
 }
 
+function Select-AvailableWSLDistribution {
+    Write-Host "Fetching available WSL distributions..."
+    try {
+        $wslListUrl = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_list.json"
+        $wslList = Invoke-RestMethod -Uri $wslListUrl -ErrorAction Stop
+
+        Write-Host "Available WSL distributions:"
+        $wslList | ForEach-Object {
+            Write-Host "  $($_.Name)"
+        }
+
+        $choice = Read-Host "Enter the name of the distribution to install: "
+        $selectedDistro = $wslList | Where-Object { $_.Name -eq $choice }
+
+        if ($selectedDistro) {
+            Write-Host "Downloading $($selectedDistro.Name)..."
+            $distroUrl = $selectedDistro.Url
+            $distroPath = "$env:TEMP\$($selectedDistro.Name).msixbundle"
+            Invoke-WebRequest -Uri $distroUrl -OutFile $distroPath -ErrorAction Stop
+            Write-Host "$($selectedDistro.Name) downloaded to: $distroPath"
+
+            $confirmation = Read-Host "Ready to install $($selectedDistro.Name). Continue? (Y/N)"
+            if ($confirmation -eq "Y" -or $confirmation -eq "y") {
+                Write-Host "Installing $($selectedDistro.Name)..."
+                Add-AppxPackage -Path $distroPath
+                Write-Host "$($selectedDistro.Name) installed."
+            } else {
+                Write-Host "Installation of $($selectedDistro.Name) cancelled."
+            }
+        } else {
+            Write-Host "Invalid distribution name. Installation cancelled."
+        }
+    } catch {
+        Write-Error "Error fetching or installing WSL distribution: $_"
+    }
+}
+
 # Main script
-Write-Host "Welcome to the WSL Management Script" -ForegroundColor Green
+Write-Host "Welcome to the Windows Subsystem for Linux Management Script" -ForegroundColor Green
 
 $continue = $true
 
@@ -103,12 +140,13 @@ while ($continue) {
     Write-Host "Please select an action:" -ForegroundColor Green
     Write-Host "  1. Remove existing WSL package"
     Write-Host "  2. Install WSL update"
-    Write-Host "  3. Install Ubuntu distribution"
-    Write-Host "  4. Verify WSL status"
-    Write-Host "  5. Clean up previous installations"
-    Write-Host "  6. Exit"
+    Write-Host "  3. Select and Install available Linux Distribution"
+    Write-Host "  4. Install Windows Subsystem for Linux"
+    Write-Host "  5. Verify WSL status"
+    Write-Host "  6. Clean up previous installations"
+    Write-Host "  7. Exit"
 
-    $choice = Read-Host "Enter your choice (1-6): "
+    $choice = Read-Host "Enter your choice (1-7): "
 
     switch ($choice) {
         '1' {
@@ -118,20 +156,23 @@ while ($continue) {
             Install-WSLUpdate
         }
         '3' {
-            Install-UbuntuDistro
+            Select-AvailableWSLDistribution
         }
         '4' {
-            VerifyWSLStatus
+            Install-WSL
         }
         '5' {
-            CleanUpPreviousInstallations
+            VerifyWSLStatus
         }
         '6' {
+            CleanUpPreviousInstallations
+        }
+        '7' {
             Write-Host "Exiting script..." -ForegroundColor Yellow
             $continue = $false
         }
         default {
-            Write-Host "Invalid choice. Please enter a number from 1 to 6." -ForegroundColor Yellow
+            Write-Host "Invalid choice. Please enter a number from 1 to 7." -ForegroundColor Yellow
         }
     }
 }
